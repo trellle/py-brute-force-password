@@ -21,21 +21,19 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def worker(start: int, end: int, target_hashes: list, found: dict) -> None:
-    print("Start task")
-    for num in range(start, end + 1):
+def worker(start: int, end: int, target_hashes: set) -> None:
+    for num in range(start, end):
         num_str = f"{num: 08d}"
         hashed = sha256_hash_str(num_str)
         if hashed in target_hashes:
             print(num_str)
-            found[hashed] = num_str
-        if len(found) == len(target_hashes):
+            target_hashes.remove(hashed)
+        if not target_hashes:
             break
 
 
 def brute_force_password() -> None:
-    manager = multiprocessing.Manager()
-    found = manager.dict()
+    hashes = multiprocessing.Manager().set(PASSWORDS_TO_BRUTE_FORCE)
     num_workers = 10
     chunk_size = 100_000_000
     tasks = []
@@ -45,13 +43,13 @@ def brute_force_password() -> None:
         tasks.append(
             multiprocessing.Process(
                 target=worker,
-                args=(start, end, PASSWORDS_TO_BRUTE_FORCE, found)
+                args=(start, end, hashes)
             )
         )
         tasks[-1].start()
 
-        for task in tasks:
-            task.join()
+    for task in tasks:
+        task.join()
 
 
 if __name__ == "__main__":
