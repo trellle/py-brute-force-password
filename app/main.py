@@ -20,14 +20,12 @@ PASSWORDS_TO_BRUTE_FORCE = [
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
-def worker(start, end, target_hashes, found):
+
+def worker(start: int, end: int, target_hashes: list, found: dict) -> None:
     print("Start task")
-    counter = 0
     for num in range(start, end + 1):
-        num_str = f"{num:08d}"
+        num_str = f"{num: 08d}"
         hashed = sha256_hash_str(num_str)
-        print(counter)
-        counter += 1
         if hashed in target_hashes:
             print(num_str)
             found[hashed] = num_str
