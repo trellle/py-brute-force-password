@@ -20,27 +20,40 @@ PASSWORDS_TO_BRUTE_FORCE = [
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
-
-def hashing_numz(hash):
-    for num in range(99_999_999):
+def worker(start, end, target_hashes, found):
+    print("Start task")
+    counter = 0
+    for num in range(start, end + 1):
         num_str = f"{num:08d}"
-        if sha256_hash_str(num_str) == hash:
+        hashed = sha256_hash_str(num_str)
+        print(counter)
+        counter += 1
+        if hashed in target_hashes:
             print(num_str)
+            found[hashed] = num_str
+        if len(found) == len(target_hashes):
+            break
 
 
 def brute_force_password() -> None:
+    manager = multiprocessing.Manager()
+    found = manager.dict()
+    num_workers = 10
+    chunk_size = 100_000_000
     tasks = []
-    for hash in PASSWORDS_TO_BRUTE_FORCE:
+    for num in range(num_workers):
+        start = num * chunk_size
+        end = (num + 1) * chunk_size
         tasks.append(
             multiprocessing.Process(
-                target=hashing_numz,
-                args=(hash,)
+                target=worker,
+                args=(start, end, PASSWORDS_TO_BRUTE_FORCE, found)
             )
         )
         tasks[-1].start()
-    
-    for task in tasks:
-        task.join()
+
+        for task in tasks:
+            task.join()
 
 
 if __name__ == "__main__":
